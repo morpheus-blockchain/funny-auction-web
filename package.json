@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@umijs/preset-react": "^1.6.15",
+    "@wanswap/sdk": "^3.0.8",
     "antd": "^4.7.3",
     "react": "^16.8.6",
     "react-dom": "^16.8.6",
