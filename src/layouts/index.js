@@ -212,8 +212,9 @@ const GameRuleModal = (props) => {
       <ModalH2>{intl.messages['gameRule7']}</ModalH2>
       <ModalH2>{intl.messages['gameRule8']}</ModalH2>
       <ModalH2>{intl.messages['gameRule9']}</ModalH2>
-      <ModalH2>2020-11-03</ModalH2>
-      <MainButton onClick={props.onCancel}>{intl.messages['ok']}</MainButton>
+      <a href="https://github.com/morpheus-blockchain/funny-auction-web" style={{marginLeft: "20px"}}>Github</a>
+
+      <MainButton onClick={props.onCancel} style={{marginTop:"40px"}}>{intl.messages['ok']}</MainButton>
     </StyledModal>
   );
 }
