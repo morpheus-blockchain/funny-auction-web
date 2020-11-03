@@ -9,7 +9,7 @@ import { connect } from 'react-redux';
 import { getNodeUrl, isSwitchFinish, getFastWeb3 } from '../utils/web3switch.js';
 import { useIntl } from 'umi';
 import { CurrencyAmount } from '@wanswap/sdk';
-import { Modal } from 'antd';
+import { Modal, Input } from 'antd';
 import Web3 from 'web3';
 import * as utils from '../utils/utils';
 import "./index.css";
@@ -18,9 +18,7 @@ function BasicLayout(props) {
   const [rpc, setRpc] = useState(undefined);
   const intl = useIntl();
 
-  const t = (key) => {
-    return intl.messages[key];
-  }
+
   useEffect(() => {
     const func = async () => {
       await getFastWeb3();
@@ -68,37 +66,10 @@ function BasicLayout(props) {
   ]
 
   const [showLiquidity, setShowLiquidity] = useState(false);
+  const [showDeposit, setShowDeposit] = useState(false);
+  const [showWithdraw, setShowWithdraw] = useState(false);
+  const [showGameRule, setShowGameRule] = useState(false);
 
-  const LiquidityModal = (props) => {
-    return (
-      <StyledModal
-        visible={props.visible}
-        onCancel={props.cancel}
-        footer={null}
-      >
-        <ModalTitle>{intl.messages['liquidity']}</ModalTitle>
-        <div>{t('totalLiquidity')}</div>
-
-      </StyledModal>
-    );
-  }
-
-  const Coin = (props) => {
-    return (
-      <div className='coin'>
-        <div className='front jump'>
-          <div className='star'></div>
-          <span className='currency'>100</span>
-          <div className='shapes'>
-            <div className='shape_l'></div>
-            <div className='shape_r'></div>
-            <span className='top'></span>
-            <span className='bottom'>WAN</span>
-          </div>
-        </div>
-        <div className='shadow'></div>
-      </div>);
-  }
 
   return (
     <Ground>
@@ -107,14 +78,36 @@ function BasicLayout(props) {
           ? <Wallet title="WanSwap" nodeUrl={rpc} />
           : null
       }
-      <LiquidityModal visible={showLiquidity} cancel={() => { setShowLiquidity(false) }} />
+      <LiquidityModal visible={showLiquidity}
+        onCancel={() => { setShowLiquidity(false) }}
+        onDeposit={() => {
+          setShowLiquidity(false);
+          setShowDeposit(true);
+        }}
+        onWithdraw={() => {
+          setShowLiquidity(false);
+          setShowWithdraw(true);
+        }} />
+      <InputModal visible={showDeposit}
+        onCancel={() => { setShowDeposit(false); }}
+        title={intl.messages['depositLiquidity']}
+        text={intl.messages['depositAmount']}
+        symbol="WAN"
+        />
+      <InputModal visible={showWithdraw}
+        onCancel={() => { setShowWithdraw(false); }}
+        title={intl.messages['withdrawLiquidity']}
+        text={intl.messages['withdrawAmount']}
+        symbol="FAP"
+        />
+      <GameRuleModal visible={showGameRule} onCancel={()=>{setShowGameRule(false)}}/>
       <TopBar>
         <Logo>
           🏵
         </Logo>
         <Tab select>{intl.messages['funnyAuction']}</Tab>
         <Tab onClick={() => { setShowLiquidity(true) }}>{intl.messages['liquidity']}</Tab>
-        <Tab>{intl.messages['gameRules']}</Tab>
+        <Tab onClick={() => { setShowGameRule(true) }}>{intl.messages['gameRules']}</Tab>
         <Assets>{intl.messages['myAssets'] + balance + ' WAN'}</Assets>
         {
           rpc
@@ -162,6 +155,85 @@ export default withRouter(connect(state => {
     selectedAccountID,
   }
 })(BasicLayout));
+
+const LiquidityModal = (props) => {
+  const intl = useIntl();
+
+  return (
+    <StyledModal
+      visible={props.visible}
+      onCancel={props.onCancel}
+      footer={null}
+    >
+      <ModalTitle>{intl.messages['liquidity']}</ModalTitle>
+      <ModalH1>{intl.messages['totalLiquidity']}:</ModalH1>
+      <BigLabel>1205 WAN</BigLabel>
+      <ModalH1>{intl.messages['myLiquidity']}:</ModalH1>
+      <SmallLabel>13.5 FAP / 13.5% / 35 WAN</SmallLabel>
+      <MainButton onClick={props.onDeposit}>{intl.messages['deposit']}</MainButton>
+      <MainButton onClick={props.onWithdraw}>{intl.messages['withdraw']}</MainButton>
+    </StyledModal>
+  );
+}
+
+const InputModal = (props) => {
+  const intl = useIntl();
+  return (
+    <StyledModal
+      visible={props.visible}
+      onCancel={props.onCancel}
+      footer={null}
+    >
+      <ModalTitle>{props.title}</ModalTitle>
+      <ModalH1>{props.text}:</ModalH1>
+      <StyledInput suffix={props.symbol}/>
+      <MainButton onClick={props.onOk}>{intl.messages['ok']}</MainButton>
+      <MainButton onClick={props.onCancel}>{intl.messages['cancel']}</MainButton>
+    </StyledModal>
+  );
+}
+
+const GameRuleModal = (props) => {
+  const intl = useIntl();
+  return (
+    <StyledModal
+      visible={props.visible}
+      onCancel={props.onCancel}
+      footer={null}
+    >
+      <ModalTitle>{intl.messages['gameRule']}</ModalTitle>
+      <ModalH2>{intl.messages['gameRule1']}</ModalH2>
+      <ModalH2>{intl.messages['gameRule2']}</ModalH2>
+      <ModalH2>{intl.messages['gameRule3']}</ModalH2>
+      <ModalH2>{intl.messages['gameRule4']}</ModalH2>
+      <ModalH2>{intl.messages['gameRule5']}</ModalH2>
+      <ModalH2>{intl.messages['gameRule6']}</ModalH2>
+      <ModalH2>{intl.messages['gameRule7']}</ModalH2>
+      <ModalH2>{intl.messages['gameRule8']}</ModalH2>
+      <ModalH2>{intl.messages['gameRule9']}</ModalH2>
+      <ModalH2>2020-11-03</ModalH2>
+      <MainButton onClick={props.onCancel}>{intl.messages['ok']}</MainButton>
+    </StyledModal>
+  );
+}
+
+const Coin = (props) => {
+  return (
+    <div className='coin'>
+      <div className='front jump'>
+        <div className='star'></div>
+        <span className='currency'>100</span>
+        <div className='shapes'>
+          <div className='shape_l'></div>
+          <div className='shape_r'></div>
+          <span className='top'></span>
+          <span className='bottom'>WAN</span>
+        </div>
+      </div>
+      <div className='shadow'></div>
+    </div>);
+}
+
 
 const RainbowLight = keyframes`
 	0% {
@@ -308,6 +380,7 @@ const MainButton = styled.div`
   /* color: white; */
   margin-left: auto;
   margin-right: auto;
+  margin-bottom: 10px;
   text-align: center;
   width: 200px;
   margin-top: 0px;
@@ -362,4 +435,41 @@ const ModalTitle = styled.div`
   line-height: 22px;
   padding: 10px;
   font-weight: bold;
+  margin-bottom: 40px;
+`;
+
+const ModalH1 = styled.div`
+  margin: 10px;
+  font-size: 18px;
+  margin-left: 40px;
+`;
+
+const ModalH2 = styled.div`
+  margin: 10px;
+  font-size: 14px;
+`;
+
+const BigLabel = styled.div`
+  width: 100%;
+  text-align: center;
+  font-size: 24px;
+  font-weight: bold;
+  padding-bottom: 16px;
+`;
+
+const SmallLabel = styled(BigLabel)`
+  font-size: 20px;
+  line-height: 52px;
+`;
+
+const StyledInput = styled(Input)`
+  border-radius: 15px;
+  margin-left: 40px;
+  margin-right: auto;
+  width: 400px;
+  margin-top: 10px;
+  margin-bottom: 60px;
+  .ant-input {
+    text-align: center;
+  }
 `;
