@@ -12,5 +12,8 @@ export default {
   address: "地址",
   status: "状态",
   pay: "支付",
-  return: "返还"
+  return: "返还",
+  liquidity: "流动性",
+  totalLiquidity: "当前总流动性",
+
 };

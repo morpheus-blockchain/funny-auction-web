@@ -1,19 +1,26 @@
-import React, {useEffect, useState, useMemo} from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 
 import styled, { keyframes } from 'styled-components';
 import { Link } from 'umi';
-import { Wallet, getSelectedAccount, getSelectedAccountWallet, WalletButton } from "wan-dex-sdk-wallet";
-import "wan-dex-sdk-wallet/index.css";
+import { Wallet, getSelectedAccount, getSelectedAccountWallet, WalletButton } from "wan-web-wallet";
+import "wan-web-wallet/index.css";
 import { withRouter } from 'umi';
 import { connect } from 'react-redux';
 import { getNodeUrl, isSwitchFinish, getFastWeb3 } from '../utils/web3switch.js';
 import { useIntl } from 'umi';
 import { CurrencyAmount } from '@wanswap/sdk';
+import { Modal } from 'antd';
+import Web3 from 'web3';
+import * as utils from '../utils/utils';
+import "./index.css";
 
 function BasicLayout(props) {
   const [rpc, setRpc] = useState(undefined);
   const intl = useIntl();
-  console.log('intl', intl);
+
+  const t = (key) => {
+    return intl.messages[key];
+  }
   useEffect(() => {
     const func = async () => {
       await getFastWeb3();
@@ -22,11 +29,11 @@ function BasicLayout(props) {
     func();
   }, []);
 
-  const balance = useMemo(()=>{
+  const balance = useMemo(() => {
     if (!props.selectedAccount) {
       return "0";
     }
-    return CurrencyAmount.ether(props.selectedAccount.get('balance')).toFixed(0);
+    return Number(Web3.utils.fromWei(props.selectedAccount.get('balance').toFixed(0))).toFixed(0);
   }, [props.selectedAccount]);
 
   const demo = [
@@ -60,32 +67,66 @@ function BasicLayout(props) {
     },
   ]
 
+  const [showLiquidity, setShowLiquidity] = useState(false);
+
+  const LiquidityModal = (props) => {
+    return (
+      <StyledModal
+        visible={props.visible}
+        onCancel={props.cancel}
+        footer={null}
+      >
+        <ModalTitle>{intl.messages['liquidity']}</ModalTitle>
+        <div>{t('totalLiquidity')}</div>
+
+      </StyledModal>
+    );
+  }
+
+  const Coin = (props) => {
+    return (
+      <div className='coin'>
+        <div className='front jump'>
+          <div className='star'></div>
+          <span className='currency'>100</span>
+          <div className='shapes'>
+            <div className='shape_l'></div>
+            <div className='shape_r'></div>
+            <span className='top'></span>
+            <span className='bottom'>WAN</span>
+          </div>
+        </div>
+        <div className='shadow'></div>
+      </div>);
+  }
+
   return (
     <Ground>
       {
         rpc
-        ? <Wallet title="WanSwap" nodeUrl={rpc} />
-        : null
+          ? <Wallet title="WanSwap" nodeUrl={rpc} />
+          : null
       }
-
+      <LiquidityModal visible={showLiquidity} cancel={() => { setShowLiquidity(false) }} />
       <TopBar>
         <Logo>
-        🏵
+          🏵
         </Logo>
         <Tab select>{intl.messages['funnyAuction']}</Tab>
-        <Tab>{intl.messages['liquidity']}</Tab>
+        <Tab onClick={() => { setShowLiquidity(true) }}>{intl.messages['liquidity']}</Tab>
         <Tab>{intl.messages['gameRules']}</Tab>
-        <Assets>{intl.messages['myAssets']+balance+' WAN'}</Assets>
+        <Assets>{intl.messages['myAssets'] + balance + ' WAN'}</Assets>
         {
           rpc
-          ? <WalletBt><WalletButton /></WalletBt>
-          : null
+            ? <WalletBt><WalletButton /></WalletBt>
+            : null
         }
       </TopBar>
       <Title>{intl.messages['auctionBidFor']}</Title>
+      <Coin />
       <Circle>
-        <p style={{fontSize:"58px"}}>100</p>
-        <p style={{fontSize:"20px"}}>Wan Coins</p>
+        <p style={{ fontSize: "58px" }}>100</p>
+        <p style={{ fontSize: "20px" }}>Wan Coins</p>
       </Circle>
       <SmallTitle>{intl.messages['currentPrice'] + "0 WAN"}</SmallTitle>
       <MainButton>{intl.messages['startGame']}</MainButton>
@@ -98,7 +139,7 @@ function BasicLayout(props) {
         <Cell>{intl.messages['return']}</Cell>
       </Header>
       {
-        demo.map((v, i)=>{
+        demo.map((v, i) => {
           return (<Row>
             <Cell>{v.rank}</Cell>
             <Cell long>{v.address}</Cell>
@@ -110,14 +151,6 @@ function BasicLayout(props) {
       }
     </Ground>
   );
-}
-
-const TableHeader = (props) => {
-  return(<div></div>);
-}
-
-const TableRow = (props) => {
-  return(<div></div>);
 }
 
 export default withRouter(connect(state => {
@@ -145,8 +178,8 @@ const RainbowLight = keyframes`
 const Ground = styled.div`
   background: linear-gradient(
     45deg,
-    rgba(0, 0, 0, 0.6) 0%,
-    rgba(158, 200, 155, 1) 50%,
+    rgba(200, 200, 200, 1) 0%,
+    rgba(158, 200, 155, 0.8) 50%,
     rgba(255, 203, 57, 1) 100%
   );
   background-size: 400% 400%;
@@ -179,8 +212,8 @@ const Tab = styled(Link)`
   padding: 8px;
   margin: 6px;
   font-size: 22px;
-  font-weight: ${props=>props.select?"bold":"normal"};
-  color: ${props=>props.select?"#ffffffff":"#ffffffbb"};
+  font-weight: ${props => props.select ? "bold" : "normal"};
+  color: ${props => props.select ? "#ffffffff" : "#ffffffbb"};
 `;
 
 const Assets = styled.div`
@@ -251,6 +284,7 @@ const Circle = styled.div`
   margin-top: 20px;
   box-shadow: 0px 0px 20px rgb(200 236 144);
   background: radial-gradient(100% 90% at 20% 0%,#f7f1aa 0%,#524814 100%);
+  opacity: 0;
 `
 
 const SmallTitle = styled.div`
@@ -270,7 +304,7 @@ const MainButton = styled.div`
   border-radius: 30px;
   height: 50px;
   padding: 16px 20px 15px 20px;
-  background-color: #e2d4b821;
+  background-color: #b8fdb6b3;
   /* color: white; */
   margin-left: auto;
   margin-right: auto;
@@ -280,7 +314,7 @@ const MainButton = styled.div`
   box-shadow: 0px 3px 10px #0000002f;
   cursor: pointer;
   :hover{
-    background-color: #e2d4b881;
+    background-color: #eeffff;
     box-shadow: 0px 3px 10px #ffff338f;
   }
 `;
@@ -310,6 +344,22 @@ const Row = styled.div`
 `;
 
 const Cell = styled.div`
-  width: ${props=>props.long ? "100px" : "60px"};
+  width: ${props => props.long ? "100px" : "60px"};
   text-align: center;
+`;
+
+const StyledModal = styled(Modal)`
+  .ant-modal-content {
+    border-radius: 15px;
+    background:rgba(189 239 218 / 90%);
+  }
+`;
+
+const ModalTitle = styled.div`
+  width: 100%;
+  text-align: center;
+  font-size: 22px;
+  line-height: 22px;
+  padding: 10px;
+  font-weight: bold;
 `;
