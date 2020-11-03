@@ -7,17 +7,18 @@ import "wan-web-wallet/index.css";
 import { withRouter } from 'umi';
 import { connect } from 'react-redux';
 import { getNodeUrl, isSwitchFinish, getFastWeb3 } from '../utils/web3switch.js';
-import { useIntl } from 'umi';
+import { useIntl, getLocale } from 'umi';
 import { CurrencyAmount } from '@wanswap/sdk';
 import { Modal, Input } from 'antd';
 import Web3 from 'web3';
 import * as utils from '../utils/utils';
 import "./index.css";
 
+console.log('getLocale', getLocale());
+
 function BasicLayout(props) {
   const [rpc, setRpc] = useState(undefined);
   const intl = useIntl();
-
 
   useEffect(() => {
     const func = async () => {
