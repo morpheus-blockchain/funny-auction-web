@@ -24,7 +24,7 @@ export default {
   depositAmount:"Deposit Amount",
   withdrawAmount:"Withdraw Amount",
   withdrawLiquidity:"Liquidity Withdraw",
-  gameRule:"Game Rules",
+  gameRule:"Funny Auction - Game Rules",
   gameRule1:"1) The top 1 player is the winner, pays the auction price, return goods value",
   gameRule2:"2) The second is the loser, pays the auction price, no return",
   gameRule3:"3) The third and subsequent players shall be ordinary participants, and all auction gold shall be returned without loss",
@@ -34,4 +34,9 @@ export default {
   gameRule7:"7) Revenue is recorded in the smart contract and can be withdrawn at any time",
   gameRule8:"8) Liquidity can be deposit into the pool and the liquidity can be withdrawn at any time",
   gameRule9:"9) The liquidity withdrawal shall be returned in accordance with the current total amount of the pool and the proportion of the liquidity",
+  myAssets: "My Assets: ",
+  walletBalance: "Wallet Balance",
+  claimable: "Claimable",
+  lockedBalance: "Locked",
+  close: "Close"
 };

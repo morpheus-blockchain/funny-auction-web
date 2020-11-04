@@ -69,7 +69,8 @@ function BasicLayout(props) {
   const [showLiquidity, setShowLiquidity] = useState(false);
   const [showDeposit, setShowDeposit] = useState(false);
   const [showWithdraw, setShowWithdraw] = useState(false);
-  const [showGameRule, setShowGameRule] = useState(false);
+  const [showGameRule, setShowGameRule] = useState(true);
+  const [showAssets, setShowAssets] = useState(false);
 
 
   return (
@@ -102,6 +103,7 @@ function BasicLayout(props) {
         symbol="FAP"
         />
       <GameRuleModal visible={showGameRule} onCancel={()=>{setShowGameRule(false)}}/>
+      <AssetsModal visible={showAssets} onCancel={()=>{setShowAssets(false)}}/>
       <TopBar>
         <Logo>
           🏵
@@ -212,9 +214,23 @@ const GameRuleModal = (props) => {
       <ModalH2>{intl.messages['gameRule7']}</ModalH2>
       <ModalH2>{intl.messages['gameRule8']}</ModalH2>
       <ModalH2>{intl.messages['gameRule9']}</ModalH2>
-      <a href="https://github.com/morpheus-blockchain/funny-auction-web" style={{marginLeft: "20px"}}>Github</a>
+      <a href="https://github.com/lolieatapple/funny-auction" style={{marginLeft: "20px"}}>Github</a>
 
       <MainButton onClick={props.onCancel} style={{marginTop:"40px"}}>{intl.messages['ok']}</MainButton>
+    </StyledModal>
+  );
+}
+
+const AssetsModal = (props) => {
+  const intl = useIntl();
+  return (
+    <StyledModal
+      visible={props.visible}
+      onCancel={props.onCancel}
+      footer={null}
+    >
+      <ModalTitle>{intl.messages['myAssets']}</ModalTitle>
+      <MainButton onClick={props.onCancel} style={{marginTop:"40px"}}>{intl.messages['close']}</MainButton>
     </StyledModal>
   );
 }
@@ -236,7 +252,6 @@ const Coin = (props) => {
     </div>);
 }
 
-
 const RainbowLight = keyframes`
 	0% {
 		background-position: 0% 50%;
@@ -252,11 +267,11 @@ const RainbowLight = keyframes`
 const Ground = styled.div`
   background: linear-gradient(
     45deg,
-    rgba(200, 200, 200, 1) 0%,
-    rgba(158, 200, 155, 0.8) 50%,
+    rgba(200, 255, 200, 1) 0%,
+    rgba(158, 200, 155, 1) 50%,
     rgba(255, 203, 57, 1) 100%
   );
-  background-size: 400% 400%;
+  background-size: 100% 100%;
   background-position: 50%;
   /* animation: ${RainbowLight} 20s linear infinite; */
   height: 100%;
@@ -299,7 +314,7 @@ const Assets = styled.div`
   /* border: 1px solid white; */
   margin-top: 12px;
   padding: 3px 20px 2px 20px;
-  background-color: #1700ff45;
+  background-color: #489275;
   color: white;
   line-height: 30px;
 
