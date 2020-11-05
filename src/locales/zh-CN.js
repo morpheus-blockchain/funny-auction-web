@@ -34,10 +34,12 @@ export default {
   gameRule7: "7) 收益记账在智能合约中，随时可提取；",
   gameRule8: "8) 可向资金池注入流动性，流动性随时可提取；",
   gameRule9: "9) 流动性提取时按当前资金池总额和流动性占比等比率返还；",
-  myAssets: "我的资产: ",
+  myAssets: "我的资产",
   walletBalance: "钱包余额",
   claimable: "可提取金额",
   lockedBalance: "待结算金额",
-  close: "关闭"
+  close: "关闭",
+  claim: "提取",
+  lockedTooltip: "下一轮开始时自动结算上一轮的结果"
 
 };

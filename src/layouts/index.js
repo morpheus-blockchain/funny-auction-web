@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 
 import styled, { keyframes } from 'styled-components';
 import { Link } from 'umi';
@@ -8,10 +8,9 @@ import { withRouter } from 'umi';
 import { connect } from 'react-redux';
 import { getNodeUrl, isSwitchFinish, getFastWeb3 } from '../utils/web3switch.js';
 import { useIntl, getLocale } from 'umi';
-import { CurrencyAmount } from '@wanswap/sdk';
-import { Modal, Input } from 'antd';
+import { Modal, Input, Row, Col, Button, Tooltip } from 'antd';
+import { QuestionCircleOutlined } from '@ant-design/icons';
 import Web3 from 'web3';
-import * as utils from '../utils/utils';
 import "./index.css";
 
 console.log('getLocale', getLocale());
@@ -28,7 +27,7 @@ function BasicLayout(props) {
     func();
   }, []);
 
-  const balance = useMemo(() => {
+  const balance = useCallback(() => {
     if (!props.selectedAccount) {
       return "0";
     }
@@ -95,15 +94,15 @@ function BasicLayout(props) {
         title={intl.messages['depositLiquidity']}
         text={intl.messages['depositAmount']}
         symbol="WAN"
-        />
+      />
       <InputModal visible={showWithdraw}
         onCancel={() => { setShowWithdraw(false); }}
         title={intl.messages['withdrawLiquidity']}
         text={intl.messages['withdrawAmount']}
         symbol="FAP"
-        />
-      <GameRuleModal visible={showGameRule} onCancel={()=>{setShowGameRule(false)}}/>
-      <AssetsModal visible={showAssets} onCancel={()=>{setShowAssets(false)}}/>
+      />
+      <GameRuleModal visible={showGameRule} onCancel={() => { setShowGameRule(false) }} />
+      <AssetsModal visible={showAssets} onCancel={() => { setShowAssets(false) }} />
       <TopBar>
         <Logo>
           🏵
@@ -111,10 +110,12 @@ function BasicLayout(props) {
         <Tab select>{intl.messages['funnyAuction']}</Tab>
         <Tab onClick={() => { setShowLiquidity(true) }}>{intl.messages['liquidity']}</Tab>
         <Tab onClick={() => { setShowGameRule(true) }}>{intl.messages['gameRules']}</Tab>
-        <Assets>{intl.messages['myAssets'] + balance + ' WAN'}</Assets>
         {
           rpc
-            ? <WalletBt><WalletButton /></WalletBt>
+            ? <>
+              <Assets onClick={() => { setShowAssets(true) }}>{intl.messages['myAssets'] + ': ' + balance() + ' WAN'}</Assets>
+              <WalletBt><WalletButton /></WalletBt>
+            </>
             : null
         }
       </TopBar>
@@ -136,13 +137,13 @@ function BasicLayout(props) {
       </Header>
       {
         demo.map((v, i) => {
-          return (<Row>
+          return (<TableRow>
             <Cell>{v.rank}</Cell>
             <Cell long>{v.address}</Cell>
             <Cell>{v.status}</Cell>
             <Cell>{v.pay}</Cell>
             <Cell>{v.return}</Cell>
-          </Row>);
+          </TableRow>);
         })
       }
     </Ground>
@@ -189,7 +190,7 @@ const InputModal = (props) => {
     >
       <ModalTitle>{props.title}</ModalTitle>
       <ModalH1>{props.text}:</ModalH1>
-      <StyledInput suffix={props.symbol}/>
+      <StyledInput suffix={props.symbol} />
       <MainButton onClick={props.onOk}>{intl.messages['ok']}</MainButton>
       <MainButton onClick={props.onCancel}>{intl.messages['cancel']}</MainButton>
     </StyledModal>
@@ -214,9 +215,9 @@ const GameRuleModal = (props) => {
       <ModalH2>{intl.messages['gameRule7']}</ModalH2>
       <ModalH2>{intl.messages['gameRule8']}</ModalH2>
       <ModalH2>{intl.messages['gameRule9']}</ModalH2>
-      <a href="https://github.com/lolieatapple/funny-auction" style={{marginLeft: "20px"}}>Github</a>
+      <a href="https://github.com/lolieatapple/funny-auction" style={{ marginLeft: "20px" }}>Github</a>
 
-      <MainButton onClick={props.onCancel} style={{marginTop:"40px"}}>{intl.messages['ok']}</MainButton>
+      <MainButton onClick={props.onCancel} style={{ marginTop: "40px" }}>{intl.messages['ok']}</MainButton>
     </StyledModal>
   );
 }
@@ -230,7 +231,34 @@ const AssetsModal = (props) => {
       footer={null}
     >
       <ModalTitle>{intl.messages['myAssets']}</ModalTitle>
-      <MainButton onClick={props.onCancel} style={{marginTop:"40px"}}>{intl.messages['close']}</MainButton>
+      <InALine>
+        <SuperBigLabel>125</SuperBigLabel>
+        <TextInside>WAN</TextInside>
+      </InALine>
+      <GridField>
+        <Row gutter={[24, 24]}>
+          <Col span={8}>{intl.messages['walletBalance']}</Col>
+          <Col span={10}>100 WAN</Col>
+          <Col span={6}></Col>
+        </Row>
+        <Row gutter={[24, 24]}>
+          <Col span={8}>{intl.messages['claimable']}</Col>
+          <Col span={10}>15 WAN</Col>
+          <Col span={6}>
+            <Button>{intl.messages['claim']}</Button>
+          </Col>
+        </Row>
+        <Row gutter={[24, 24]}>
+          <Col span={8}>{intl.messages['lockedBalance']}</Col>
+          <Col span={10}>20 WAN</Col>
+          <Col span={6}>
+            <Tooltip title={intl.messages['lockedTooltip']}>
+              <QuestionCircleOutlined />
+            </Tooltip>
+          </Col>
+        </Row>
+      </GridField>
+      <MainButton onClick={props.onCancel} style={{ marginTop: "40px" }}>{intl.messages['close']}</MainButton>
     </StyledModal>
   );
 }
@@ -421,7 +449,7 @@ const Header = styled.div`
   border-bottom: 1px solid #24633b5e;
 `;
 
-const Row = styled.div`
+const TableRow = styled.div`
   width: 600px;
   height: 30px;
   display: flex;
@@ -479,6 +507,12 @@ const SmallLabel = styled(BigLabel)`
   line-height: 52px;
 `;
 
+const SuperBigLabel = styled(BigLabel)`
+  font-size: 60px;
+  font-weight: normal;
+  width: auto;
+`;
+
 const StyledInput = styled(Input)`
   border-radius: 15px;
   margin-left: 40px;
@@ -489,4 +523,25 @@ const StyledInput = styled(Input)`
   .ant-input {
     text-align: center;
   }
+`;
+
+const TextInside = styled.div`
+  font-size: 18px;
+  padding-top: 46px;
+  margin-left: 8px;
+`;
+
+const InALine = styled.div`
+  width: 100%;
+  text-align: center;
+  display: flex;
+  justify-content: center;
+`;
+
+const GridField = styled.div`
+  margin-top: 20px;
+  width: 400px;
+  margin: auto;
+  font-size: 18px;
+  text-align: center;
 `;
