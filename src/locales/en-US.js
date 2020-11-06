@@ -2,7 +2,7 @@ export default {
   WELCOME_TO_UMI_WORLD: "{name}, welcome to umi's world",
   funnyAuction: "Funny Auction",
   liquidity: "Liquidity",
-  gameRule: "Game Rules",
+  gameRules: "Game Rules",
   myAssets: "My Assets: ",
   auctionBidFor: "Auction Bid For",
   currentPrice: "Current Price: ",
@@ -38,5 +38,10 @@ export default {
   walletBalance: "Wallet Balance",
   claimable: "Claimable",
   lockedBalance: "Locked",
-  close: "Close"
+  close: "Close",
+  claim: "Claim",
+  lockedTooltip: "The results of the previous round are automatically settled at the beginning of the next round",
+  raiseBid: "Raise A Bid",
+  bid: "Bid:",
+  custom: "Custom",
 };

@@ -40,6 +40,9 @@ export default {
   lockedBalance: "待结算金额",
   close: "关闭",
   claim: "提取",
-  lockedTooltip: "下一轮开始时自动结算上一轮的结果"
+  lockedTooltip: "下一轮开始时自动结算上一轮的结果",
+  raiseBid: "开始报价",
+  bid: "出价:",
+  custom: "自定义",
 
 };

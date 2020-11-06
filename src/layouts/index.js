@@ -70,6 +70,7 @@ function BasicLayout(props) {
   const [showWithdraw, setShowWithdraw] = useState(false);
   const [showGameRule, setShowGameRule] = useState(true);
   const [showAssets, setShowAssets] = useState(false);
+  const [showBid, setShowBid] = useState(false);
 
 
   return (
@@ -103,6 +104,7 @@ function BasicLayout(props) {
       />
       <GameRuleModal visible={showGameRule} onCancel={() => { setShowGameRule(false) }} />
       <AssetsModal visible={showAssets} onCancel={() => { setShowAssets(false) }} />
+      <BidModal visible={showBid} onCancel={() => { setShowBid(false) }} />
       <TopBar>
         <Logo>
           🏵
@@ -126,7 +128,7 @@ function BasicLayout(props) {
         <p style={{ fontSize: "20px" }}>Wan Coins</p>
       </Circle>
       <SmallTitle>{intl.messages['currentPrice'] + "0 WAN"}</SmallTitle>
-      <MainButton>{intl.messages['startGame']}</MainButton>
+      <MainButton onClick={() => { setShowBid(true) }}>{intl.messages['startGame']}</MainButton>
       <Title>{intl.messages['lastRoundRank']}</Title>
       <Header>
         <Cell>{intl.messages['rank']}</Cell>
@@ -245,7 +247,7 @@ const AssetsModal = (props) => {
           <Col span={8}>{intl.messages['claimable']}</Col>
           <Col span={10}>15 WAN</Col>
           <Col span={6}>
-            <Button>{intl.messages['claim']}</Button>
+            <SmallButton>{intl.messages['claim']}</SmallButton>
           </Col>
         </Row>
         <Row gutter={[24, 24]}>
@@ -259,6 +261,46 @@ const AssetsModal = (props) => {
         </Row>
       </GridField>
       <MainButton onClick={props.onCancel} style={{ marginTop: "40px" }}>{intl.messages['close']}</MainButton>
+    </StyledModal>
+  );
+}
+
+const BidModal = (props) => {
+  const intl = useIntl();
+  const [select, setSelect] = useState("1");
+  return (
+    <StyledModal
+      visible={props.visible}
+      onCancel={props.onCancel}
+      footer={null}
+    >
+      <ModalTitle>{intl.messages['myAssets']}</ModalTitle>
+      <SmallTitle>{intl.messages['currentPrice'] + "0 WAN"}</SmallTitle>
+      <GridField>
+        <Row gutter={[24, 24]}>
+          <Col span={4}>{intl.messages['bid']}</Col>
+          <Col span={8}><SmallButton selected={select === "1"} onClick={()=>{setSelect('1')}}>+1 WAN</SmallButton></Col>
+          <Col span={8}><SmallButton selected={select === "2"} onClick={()=>{setSelect('2')}}>+2 WAN</SmallButton></Col>
+        </Row>
+        <Row gutter={[24, 24]}>
+          <Col span={4}></Col>
+          <Col span={8}><SmallButton selected={select === "5"} onClick={()=>{setSelect('5')}}>+5 WAN</SmallButton></Col>
+          <Col span={8}><SmallButton selected={select === "10"} onClick={()=>{setSelect('10')}}>+10 WAN</SmallButton></Col>
+        </Row>
+        <Row gutter={[24, 24]}>
+          <Col span={4}></Col>
+          <Col span={8}><SmallButton selected selected={select === "custom"} onClick={()=>{setSelect('custom')}}>{intl.messages['custom']}</SmallButton></Col>
+          <Col span={8}>
+            {
+              select === "custom"
+              ? <SmallInput suffix={'WAN'} />
+              : null
+            }
+          </Col>
+        </Row>
+      </GridField>
+      <MainButton onClick={props.onCancel} style={{ marginTop: "40px" }}>{intl.messages['ok']}</MainButton>
+      <MainButton onClick={props.onCancel} style={{ marginTop: "40px" }}>{intl.messages['cancel']}</MainButton>
     </StyledModal>
   );
 }
@@ -325,7 +367,7 @@ const Logo = styled.div`
 
 const Tab = styled(Link)`
   text-align: center;
-  width: 120px;
+  width: auto;
   padding: 8px;
   margin: 6px;
   font-size: 22px;
@@ -544,4 +586,20 @@ const GridField = styled.div`
   margin: auto;
   font-size: 18px;
   text-align: center;
+`;
+
+const SmallButton = styled(MainButton)`
+  width: auto;
+  height: auto;
+  font-size: 14px;
+  font-weight: normal;
+  padding: 3px;
+  background-color: ${props=>props.selected?"#eeffff":"#b8fdb6b3"};
+  box-shadow: ${props=>props.selected?"0px 3px 10px #ffff338f":"0px 3px 10px #0000002f"};
+
+`;
+
+const SmallInput = styled(StyledInput)`
+  margin: 0px;
+  width: auto;
 `;
