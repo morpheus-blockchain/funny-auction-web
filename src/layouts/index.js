@@ -71,7 +71,8 @@ function BasicLayout(props) {
   const [showGameRule, setShowGameRule] = useState(true);
   const [showAssets, setShowAssets] = useState(false);
   const [showBid, setShowBid] = useState(false);
-
+  const [showPayConfirm, setShowPayConfirm] = useState(false);
+  const [bidValue, setBidValue] = useState(0);
 
   return (
     <Ground>
@@ -104,7 +105,12 @@ function BasicLayout(props) {
       />
       <GameRuleModal visible={showGameRule} onCancel={() => { setShowGameRule(false) }} />
       <AssetsModal visible={showAssets} onCancel={() => { setShowAssets(false) }} />
-      <BidModal visible={showBid} onCancel={() => { setShowBid(false) }} />
+      <BidModal visible={showBid} onCancel={() => { setShowBid(false) }} onOk={(value)=>{
+        setBidValue(value);
+        setShowBid(false);
+        setShowPayConfirm(true);
+      }}/>
+      <PayConfirmModal visible={showPayConfirm} onCancel={()=>{setShowPayConfirm(false)}} bidValue={bidValue}/>
       <TopBar>
         <Logo>
           🏵
@@ -268,6 +274,7 @@ const AssetsModal = (props) => {
 const BidModal = (props) => {
   const intl = useIntl();
   const [select, setSelect] = useState("1");
+  const [value, setValue] = useState(1);
   return (
     <StyledModal
       visible={props.visible}
@@ -279,13 +286,13 @@ const BidModal = (props) => {
       <GridField>
         <Row gutter={[24, 24]}>
           <Col span={4}>{intl.messages['bid']}</Col>
-          <Col span={8}><SmallButton selected={select === "1"} onClick={()=>{setSelect('1')}}>+1 WAN</SmallButton></Col>
-          <Col span={8}><SmallButton selected={select === "2"} onClick={()=>{setSelect('2')}}>+2 WAN</SmallButton></Col>
+          <Col span={8}><SmallButton selected={select === "1"} onClick={()=>{setSelect('1');setValue(1);}}>+1 WAN</SmallButton></Col>
+          <Col span={8}><SmallButton selected={select === "2"} onClick={()=>{setSelect('2');setValue(2);}}>+2 WAN</SmallButton></Col>
         </Row>
         <Row gutter={[24, 24]}>
           <Col span={4}></Col>
-          <Col span={8}><SmallButton selected={select === "5"} onClick={()=>{setSelect('5')}}>+5 WAN</SmallButton></Col>
-          <Col span={8}><SmallButton selected={select === "10"} onClick={()=>{setSelect('10')}}>+10 WAN</SmallButton></Col>
+          <Col span={8}><SmallButton selected={select === "5"} onClick={()=>{setSelect('5');setValue(5);}}>+5 WAN</SmallButton></Col>
+          <Col span={8}><SmallButton selected={select === "10"} onClick={()=>{setSelect('10');setValue(10);}}>+10 WAN</SmallButton></Col>
         </Row>
         <Row gutter={[24, 24]}>
           <Col span={4}></Col>
@@ -293,9 +300,58 @@ const BidModal = (props) => {
           <Col span={8}>
             {
               select === "custom"
-              ? <SmallInput suffix={'WAN'} />
+              ? <SmallInput suffix={'WAN'} onChange={(e)=>{
+                const v = e.target.value;
+                if (isNaN(v) || v < 0) {
+                  return;
+                }
+
+                setValue(v);
+              }} />
               : null
             }
+          </Col>
+        </Row>
+      </GridField>
+      <MainButton onClick={()=>{
+        props.onOk(value)}} style={{ marginTop: "40px" }}>{intl.messages['ok']}</MainButton>
+      <MainButton onClick={props.onCancel} style={{ marginTop: "40px" }}>{intl.messages['cancel']}</MainButton>
+    </StyledModal>
+  );
+}
+
+const PayConfirmModal = (props) => {
+  const intl = useIntl();
+  console.log('bidValue', props.bidValue);
+  return (
+    <StyledModal
+      visible={props.visible}
+      onCancel={props.onCancel}
+      footer={null}
+    >
+      <ModalTitle>{intl.messages['payConfirm']}</ModalTitle>
+      <GridField>
+        <Row gutter={[24, 24]}>
+          <Col span={10}>{intl.messages['bid']}</Col>
+          <Col span={8}>100 WAN</Col>
+          <Col span={6}></Col>
+        </Row>
+        <Row gutter={[24, 24]}>
+          <Col span={10}>{intl.messages['payFromClaimable']}</Col>
+          <Col span={8}>15 WAN</Col>
+          <Col span={6}>
+            <Tooltip title={intl.messages['payFromHelp1']}>
+              <QuestionCircleOutlined />
+            </Tooltip>
+          </Col>
+        </Row>
+        <Row gutter={[24, 24]}>
+          <Col span={10}>{intl.messages['payFromWallet']}</Col>
+          <Col span={8}>20 WAN</Col>
+          <Col span={6}>
+            <Tooltip title={intl.messages['payFromHelp2']}>
+              <QuestionCircleOutlined />
+            </Tooltip>
           </Col>
         </Row>
       </GridField>
