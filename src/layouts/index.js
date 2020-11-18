@@ -8,17 +8,20 @@ import { withRouter } from 'umi';
 import { connect } from 'react-redux';
 import { getNodeUrl, isSwitchFinish, getFastWeb3 } from '../utils/web3switch.js';
 import { useIntl, getLocale } from 'umi';
-import { Modal, Input, Row, Col, Button, Tooltip } from 'antd';
+import { Modal, Input, Row, Col, Button, Tooltip, message } from 'antd';
 import { QuestionCircleOutlined } from '@ant-design/icons';
 import Web3 from 'web3';
 import "./index.css";
+import * as multicall from '../utils/multicall';
+import * as sc from '../utils/sc';
 
 console.log('getLocale', getLocale());
 
 function BasicLayout(props) {
   const [rpc, setRpc] = useState(undefined);
   const intl = useIntl();
-
+  const [blockNumber, setBlockNumber] = useState('--');
+  const [info, setInfo] = useState();
   useEffect(() => {
     const func = async () => {
       await getFastWeb3();
@@ -27,6 +30,28 @@ function BasicLayout(props) {
     func();
   }, []);
 
+  useEffect(() => {
+    if (!props.networkId) {
+      return;
+    }
+
+    let timer;
+    const getInfo = async () => {
+      let ret = await multicall.getFunnyAuctionInfo(getNodeUrl(), props.networkId, props.selectedAccount ? props.selectedAccount.get('address') : undefined);
+      setBlockNumber(Number(ret.results.blockNumber.toString()));
+      setInfo(ret.results.transformed);
+      timer = setTimeout(getInfo, 5000);
+    }
+
+    getInfo();
+
+    return () => {
+      if (timer) {
+        clearInterval(timer);
+      }
+    }
+  }, [props.networkId, props.selectedAccount]);
+
   const balance = useCallback(() => {
     if (!props.selectedAccount) {
       return "0";
@@ -34,7 +59,7 @@ function BasicLayout(props) {
     return Number(Web3.utils.fromWei(props.selectedAccount.get('balance').toFixed(0))).toFixed(0);
   }, [props.selectedAccount]);
 
-  const demo = [
+  let rank = [
     {
       rank: 1,
       address: '0x4Cf0...7D9e',
@@ -63,7 +88,29 @@ function BasicLayout(props) {
       pay: '8 WAN',
       return: '8 WAN',
     },
-  ]
+  ];
+
+  rank = !info ? [] : info.players.map((v, i) => {
+    return {
+      address: v,
+      pay: info.bids[i] / 10 ** 18,
+    }
+  });
+
+  rank = rank.sort((a, b) => {
+    return a.pay - b.pay;
+  });
+
+  rank = rank.map((v, i) => {
+    const status = i === 0 ? 'Winner' : (i === 1 ? 'Loser' : '--');
+    const returns = i === 0 ? (info.goodsValue - v.pay) : (i === 1 ? (0) : v.pay);
+    return {
+      ...v,
+      rank: i + 1,
+      status,
+      return: returns + ' WAN'
+    }
+  });
 
   const [showLiquidity, setShowLiquidity] = useState(false);
   const [showDeposit, setShowDeposit] = useState(false);
@@ -73,6 +120,7 @@ function BasicLayout(props) {
   const [showBid, setShowBid] = useState(false);
   const [showPayConfirm, setShowPayConfirm] = useState(false);
   const [bidValue, setBidValue] = useState(0);
+  const [loading, setLoading] = useState(false);
 
   return (
     <Ground>
@@ -82,8 +130,11 @@ function BasicLayout(props) {
           : null
       }
       <LiquidityModal visible={showLiquidity}
+        totalLiquidity={info ? info.liquidityPool : 0}
+        totalSupply={info ? info.totalSupply : 0}
+        myLiquidity={info ? (info.myLiquidity ? info.myLiquidity : 0) : 0}
         onCancel={() => { setShowLiquidity(false) }}
-        onDeposit={() => {
+        onDeposit={(value) => {
           setShowLiquidity(false);
           setShowDeposit(true);
         }}
@@ -92,32 +143,56 @@ function BasicLayout(props) {
           setShowWithdraw(true);
         }} />
       <InputModal visible={showDeposit}
+        onOk={(value) => {
+          setLoading(true);
+          sc.addLiquidity(value, undefined, props.selectedWallet, props.networkId).then((ret) => {
+            message.success('Tx is sent: ' + ret)
+            setShowDeposit(false);
+          }).catch(ret => {
+            message.error('Failed: ' + ret);
+          }).finally(() => {
+            setLoading(false);
+          });
+        }}
         onCancel={() => { setShowDeposit(false); }}
+        loading={loading}
         title={intl.messages['depositLiquidity']}
         text={intl.messages['depositAmount']}
         symbol="WAN"
       />
       <InputModal visible={showWithdraw}
+        withdraw={true}
+        onOk={() => {
+          setLoading(true);
+          sc.withdraw(props.selectedWallet, props.networkId).then((ret) => {
+            message.success('Tx is sent: ' + ret)
+            setShowWithdraw(false);
+          }).catch(ret => {
+            message.error('Failed: ' + ret);
+          }).finally(() => {
+            setLoading(false);
+          });
+        }}
         onCancel={() => { setShowWithdraw(false); }}
         title={intl.messages['withdrawLiquidity']}
         text={intl.messages['withdrawAmount']}
         symbol="FAP"
       />
       <GameRuleModal visible={showGameRule} onCancel={() => { setShowGameRule(false) }} />
-      <AssetsModal visible={showAssets} onCancel={() => { setShowAssets(false) }} />
-      <BidModal visible={showBid} onCancel={() => { setShowBid(false) }} onOk={(value)=>{
+      <AssetsModal visible={showAssets} onCancel={() => { setShowAssets(false) }} balance={balance} />
+      <BidModal visible={showBid} onCancel={() => { setShowBid(false) }} onOk={(value) => {
         setBidValue(value);
         setShowBid(false);
         setShowPayConfirm(true);
-      }}/>
-      <PayConfirmModal visible={showPayConfirm} onCancel={()=>{setShowPayConfirm(false)}} bidValue={bidValue}/>
+      }} />
+      <PayConfirmModal visible={showPayConfirm} onCancel={() => { setShowPayConfirm(false) }} bidValue={bidValue} />
       <TopBar>
         <Logo>
           🏵
         </Logo>
-        <Tab select>{intl.messages['funnyAuction']}</Tab>
-        <Tab onClick={() => { setShowLiquidity(true) }}>{intl.messages['liquidity']}</Tab>
-        <Tab onClick={() => { setShowGameRule(true) }}>{intl.messages['gameRules']}</Tab>
+        <Tab to="/" selected>{intl.messages['funnyAuction']}</Tab>
+        <Tab to="/" onClick={() => { setShowLiquidity(true) }}>{intl.messages['liquidity']}</Tab>
+        <Tab to="/" onClick={() => { setShowGameRule(true) }}>{intl.messages['gameRules']}</Tab>
         {
           rpc
             ? <>
@@ -128,12 +203,12 @@ function BasicLayout(props) {
         }
       </TopBar>
       <Title>{intl.messages['auctionBidFor']}</Title>
-      <Coin />
+      <Coin amount={info ? info.goodsValue : '--'} />
       <Circle>
         <p style={{ fontSize: "58px" }}>100</p>
         <p style={{ fontSize: "20px" }}>Wan Coins</p>
       </Circle>
-      <SmallTitle>{intl.messages['currentPrice'] + "0 WAN"}</SmallTitle>
+      <SmallTitle>{intl.messages['currentPrice'] + (info ? info.currentBidPrice : 0) + " WAN"}</SmallTitle>
       <MainButton onClick={() => { setShowBid(true) }}>{intl.messages['startGame']}</MainButton>
       <Title>{intl.messages['lastRoundRank']}</Title>
       <Header>
@@ -144,8 +219,8 @@ function BasicLayout(props) {
         <Cell>{intl.messages['return']}</Cell>
       </Header>
       {
-        demo.map((v, i) => {
-          return (<TableRow>
+        rank.map((v, i) => {
+          return (<TableRow key={i}>
             <Cell>{v.rank}</Cell>
             <Cell long>{v.address}</Cell>
             <Cell>{v.status}</Cell>
@@ -154,6 +229,7 @@ function BasicLayout(props) {
           </TableRow>);
         })
       }
+      <BlockNumber>🔵{' ' + blockNumber}</BlockNumber>
     </Ground>
   );
 }
@@ -179,9 +255,9 @@ const LiquidityModal = (props) => {
     >
       <ModalTitle>{intl.messages['liquidity']}</ModalTitle>
       <ModalH1>{intl.messages['totalLiquidity']}:</ModalH1>
-      <BigLabel>1205 WAN</BigLabel>
+      <BigLabel>{props.totalLiquidity.toFixed(0)} WAN</BigLabel>
       <ModalH1>{intl.messages['myLiquidity']}:</ModalH1>
-      <SmallLabel>13.5 FAP / 13.5% / 35 WAN</SmallLabel>
+      <SmallLabel>{props.myLiquidity} FAP / {props.myLiquidity > 0 ? Number((props.myLiquidity * 100 / props.totalSupply).toFixed(2)) : 0}% / {props.myLiquidity > 0 ? (props.myLiquidity / props.totalSupply * props.totalLiquidity).toFixed(0) : 0} WAN</SmallLabel>
       <MainButton onClick={props.onDeposit}>{intl.messages['deposit']}</MainButton>
       <MainButton onClick={props.onWithdraw}>{intl.messages['withdraw']}</MainButton>
     </StyledModal>
@@ -190,6 +266,7 @@ const LiquidityModal = (props) => {
 
 const InputModal = (props) => {
   const intl = useIntl();
+  const [amount, setAmount] = useState();
   return (
     <StyledModal
       visible={props.visible}
@@ -197,9 +274,16 @@ const InputModal = (props) => {
       footer={null}
     >
       <ModalTitle>{props.title}</ModalTitle>
-      <ModalH1>{props.text}:</ModalH1>
-      <StyledInput suffix={props.symbol} />
-      <MainButton onClick={props.onOk}>{intl.messages['ok']}</MainButton>
+      {
+        !props.withdraw
+          ? <>
+            <ModalH1>{props.text}:</ModalH1>
+            <StyledInput suffix={props.symbol} value={amount} placeholder={'Input Amount Here'} onChange={(e) => { setAmount(e.target.value) }} />
+          </>
+          : null
+      }
+
+      <MainButton onClick={() => { props.onOk(amount) }}>{intl.messages['ok']}</MainButton>
       <MainButton onClick={props.onCancel}>{intl.messages['cancel']}</MainButton>
     </StyledModal>
   );
@@ -246,7 +330,7 @@ const AssetsModal = (props) => {
       <GridField>
         <Row gutter={[24, 24]}>
           <Col span={8}>{intl.messages['walletBalance']}</Col>
-          <Col span={10}>100 WAN</Col>
+          <Col span={10}>{props.balance()} WAN</Col>
           <Col span={6}></Col>
         </Row>
         <Row gutter={[24, 24]}>
@@ -286,35 +370,36 @@ const BidModal = (props) => {
       <GridField>
         <Row gutter={[24, 24]}>
           <Col span={4}>{intl.messages['bid']}</Col>
-          <Col span={8}><SmallButton selected={select === "1"} onClick={()=>{setSelect('1');setValue(1);}}>+1 WAN</SmallButton></Col>
-          <Col span={8}><SmallButton selected={select === "2"} onClick={()=>{setSelect('2');setValue(2);}}>+2 WAN</SmallButton></Col>
+          <Col span={8}><SmallButton selected={select === "1"} onClick={() => { setSelect('1'); setValue(1); }}>+1 WAN</SmallButton></Col>
+          <Col span={8}><SmallButton selected={select === "2"} onClick={() => { setSelect('2'); setValue(2); }}>+2 WAN</SmallButton></Col>
         </Row>
         <Row gutter={[24, 24]}>
           <Col span={4}></Col>
-          <Col span={8}><SmallButton selected={select === "5"} onClick={()=>{setSelect('5');setValue(5);}}>+5 WAN</SmallButton></Col>
-          <Col span={8}><SmallButton selected={select === "10"} onClick={()=>{setSelect('10');setValue(10);}}>+10 WAN</SmallButton></Col>
+          <Col span={8}><SmallButton selected={select === "5"} onClick={() => { setSelect('5'); setValue(5); }}>+5 WAN</SmallButton></Col>
+          <Col span={8}><SmallButton selected={select === "10"} onClick={() => { setSelect('10'); setValue(10); }}>+10 WAN</SmallButton></Col>
         </Row>
         <Row gutter={[24, 24]}>
           <Col span={4}></Col>
-          <Col span={8}><SmallButton selected selected={select === "custom"} onClick={()=>{setSelect('custom')}}>{intl.messages['custom']}</SmallButton></Col>
+          <Col span={8}><SmallButton selected selected={select === "custom"} onClick={() => { setSelect('custom') }}>{intl.messages['custom']}</SmallButton></Col>
           <Col span={8}>
             {
               select === "custom"
-              ? <SmallInput suffix={'WAN'} onChange={(e)=>{
-                const v = e.target.value;
-                if (isNaN(v) || v < 0) {
-                  return;
-                }
+                ? <SmallInput suffix={'WAN'} onChange={(e) => {
+                  const v = e.target.value;
+                  if (isNaN(v) || v < 0) {
+                    return;
+                  }
 
-                setValue(v);
-              }} />
-              : null
+                  setValue(v);
+                }} />
+                : null
             }
           </Col>
         </Row>
       </GridField>
-      <MainButton onClick={()=>{
-        props.onOk(value)}} style={{ marginTop: "40px" }}>{intl.messages['ok']}</MainButton>
+      <MainButton onClick={() => {
+        props.onOk(value)
+      }} style={{ marginTop: "40px" }}>{intl.messages['ok']}</MainButton>
       <MainButton onClick={props.onCancel} style={{ marginTop: "40px" }}>{intl.messages['cancel']}</MainButton>
     </StyledModal>
   );
@@ -322,7 +407,7 @@ const BidModal = (props) => {
 
 const PayConfirmModal = (props) => {
   const intl = useIntl();
-  console.log('bidValue', props.bidValue);
+  // console.log('bidValue', props.bidValue);
   return (
     <StyledModal
       visible={props.visible}
@@ -366,7 +451,7 @@ const Coin = (props) => {
     <div className='coin'>
       <div className='front jump'>
         <div className='star'></div>
-        <span className='currency'>100</span>
+        <span className='currency'>{props.amount}</span>
         <div className='shapes'>
           <div className='shape_l'></div>
           <div className='shape_r'></div>
@@ -427,8 +512,8 @@ const Tab = styled(Link)`
   padding: 8px;
   margin: 6px;
   font-size: 22px;
-  font-weight: ${props => props.select ? "bold" : "normal"};
-  color: ${props => props.select ? "#ffffffff" : "#ffffffbb"};
+  font-weight: ${props => props.selected ? "bold" : "normal"};
+  color: ${props => props.selected ? "#ffffffff" : "#ffffffbb"};
 `;
 
 const Assets = styled.div`
@@ -565,6 +650,7 @@ const Cell = styled.div`
 `;
 
 const StyledModal = styled(Modal)`
+  width: 600px!important;
   .ant-modal-content {
     border-radius: 15px;
     background:rgba(189 239 218 / 90%);
@@ -615,7 +701,7 @@ const StyledInput = styled(Input)`
   border-radius: 15px;
   margin-left: 40px;
   margin-right: auto;
-  width: 400px;
+  width: 460px;
   margin-top: 10px;
   margin-bottom: 60px;
   .ant-input {
@@ -638,7 +724,7 @@ const InALine = styled.div`
 
 const GridField = styled.div`
   margin-top: 20px;
-  width: 400px;
+  width: 460px;
   margin: auto;
   font-size: 18px;
   text-align: center;
@@ -650,12 +736,19 @@ const SmallButton = styled(MainButton)`
   font-size: 14px;
   font-weight: normal;
   padding: 3px;
-  background-color: ${props=>props.selected?"#eeffff":"#b8fdb6b3"};
-  box-shadow: ${props=>props.selected?"0px 3px 10px #ffff338f":"0px 3px 10px #0000002f"};
+  background-color: ${props => props.selected ? "#eeffff" : "#b8fdb6b3"};
+  box-shadow: ${props => props.selected ? "0px 3px 10px #ffff338f" : "0px 3px 10px #0000002f"};
 
 `;
 
 const SmallInput = styled(StyledInput)`
   margin: 0px;
   width: auto;
+`;
+
+const BlockNumber = styled.div`
+  position: absolute;
+  top: 97vh;
+  left: 10px;
+  font-size: 12px;
 `;

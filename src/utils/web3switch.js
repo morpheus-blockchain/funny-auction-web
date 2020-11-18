@@ -19,7 +19,7 @@ let web3s = [];
 let web3select = 0;
 let switchFinish = false;
 
-console.log('ready to new web3...');
+// console.log('ready to new web3...');
 for (let i=0; i<nodeUrls.length; i++) {
     try {
         if (nodeUrls[i].indexOf('ws') === 0) {
@@ -35,7 +35,7 @@ for (let i=0; i<nodeUrls.length; i++) {
 export const getFastWeb3 = async () => {
     let timeout = 5000;
 
-    console.log('Search fast web3...timeout:', timeout);
+    // console.log('Search fast web3...timeout:', timeout);
     let funcs = [];
     for (let i = 0; i < web3s.length; i++) {
         let func = async () => {
@@ -66,9 +66,9 @@ export const getFastWeb3 = async () => {
     }
     let ret = await Promise.all(funcs);
     ret.sort((a, b) => (a.delay - b.delay));
-    console.log(ret);
+    // console.log(ret);
     web3select = ret[0].index;
-    console.log('web3select', web3select, nodeUrls[web3select]);
+    // console.log('web3select', web3select, nodeUrls[web3select]);
     switchFinish = true;
 }
 

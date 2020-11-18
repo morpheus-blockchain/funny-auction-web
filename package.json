@@ -8,6 +8,7 @@
     "precommit": "lint-staged"
   },
   "dependencies": {
+    "@makerdao/multicall": "^0.11.0",
     "@umijs/preset-react": "^1.6.15",
     "@wanswap/sdk": "^3.0.8",
     "antd": "^4.7.3",
